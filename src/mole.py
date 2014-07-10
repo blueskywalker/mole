@@ -1,6 +1,7 @@
 __author__ = 'jkim'
 
 from reppy.cache import RobotsCache
+from beautifulscraper import BeautifulScraper
 import urllib2
 
 class Mole:
@@ -21,5 +22,13 @@ class Mole:
 if __name__ == "__main__":
     crawler = Mole()
     url = 'http://www.nasdaq.com'
-    html= crawler.fetch(url)
-    print html
+    #html= crawler.fetch(url)
+    #print html
+    scraper = BeautifulScraper()
+    scraper.add_header('User-Agent',Mole.agent)
+    body = scraper.go(url)
+    section = body.find('div',{'id':'home-editors-pick'})
+    for ul in section.findAll('ul'):
+        print ul.find('a')
+
+
