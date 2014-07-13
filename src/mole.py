@@ -4,7 +4,7 @@ __author__ = 'jkim'
 from reppy.cache import RobotsCache
 from beautifulscraper import BeautifulScraper
 import nltk
-
+import re
 
 class Mole:
     """ fetch web page based on robots.txt """
@@ -33,6 +33,9 @@ class Mole:
 
         return ret
 
+    def filter_punctuation(self,tokens):
+        non_punct = re.compile('.*[A-Za-z0-9].*')
+        return [ w for w in tokens if non_punct.match(w) ]
 
 
 if __name__ == "__main__":
