@@ -6,6 +6,7 @@ from beautifulscraper import BeautifulScraper
 import nltk
 import re
 
+
 class Mole:
     """ fetch web page based on robots.txt """
 
@@ -37,17 +38,25 @@ class Mole:
         non_punct = re.compile('.*[A-Za-z0-9].*')
         return [ w for w in tokens if non_punct.match(w) ]
 
+    def get_sitexml_robots(self,url):
+        robot_url = '/'.join([url, 'robots.txt'])
+        content = self.fetch(robot_url)
+        lines = str(content).split('\n')
+        sitemaps=[]
+        for line in lines:
+            line = line.lower()
+            index=line.find("sitemap")
+            if index < 0 :
+                continue
+            m=re.search('sitemap\s*:\s*(\S+)',line[index:])
+            sitemaps.append(m.group(1))
+
+        return sitemaps
+
+    def get_sitemap_url(self,maps):
+        for url in maps:
+
 
 if __name__ == "__main__":
-    import sys
     crawler = Mole()
-    for article_url in crawler.access2nasdaq():
-        page = crawler.fetch(article_url)
-        if page is not None:
-            raw = nltk.clean_html(str(page))
-            tokens = nltk.word_tokenize(raw)
-            fdist = nltk.FreqDist(tokens)
-            print fdist.N()
-            print fdist.B()
-            print fdist.samples()
-            sys.exit(0)
+    sitemaps=crawler.get_sitexml_robots('http://www.nytimes.com')
