@@ -2,37 +2,33 @@ __author__ = 'jkim'
 
 
 from reppy.cache import RobotsCache
-from beautifulscraper import BeautifulScraper
+import urllib2
 import nltk
 import re
+import zlib
+import socket
 
 
 class Mole:
     """ fetch web page based on robots.txt """
 
-    agent = "jerry's crawler"
-
     def __init__(self):
+        self.agent = "jerry's crawler"
         self.robots = RobotsCache()
-        self.scraper = BeautifulScraper()
+
+        timeout = 60
+        socket.setdefaulttimeout(timeout)
 
     def fetch(self, uri):
-        if self.robots.allowed(uri, Mole.agent):
-            self.scraper.add_header('User-Agent', Mole.agent)
-            return self.scraper.go(uri)
+        # timeout in seconds
+        if self.robots.allowed(uri, self.agent):
+            req = urllib2.Request(uri)
+            req.add_header('User-Agent', self.agent)
+            response = urllib2.urlopen(req)
+            if response.code == 200:
+                return response.read()
+
         return None
-
-    def access2nasdaq(self):
-        url = 'http://www.nasdaq.com'
-        body = self.fetch(url)
-        ret = []
-        if body is not None:
-            section = body.find('div', {'id' : 'home-editors-pick'})
-
-            for ul in section.findAll('ul'):
-                ret.append(ul.find('a')['href'])
-
-        return ret
 
     def filter_punctuation(self,tokens):
         non_punct = re.compile('.*[A-Za-z0-9].*')
@@ -41,7 +37,7 @@ class Mole:
     def get_sitexml_robots(self,url):
         robot_url = '/'.join([url, 'robots.txt'])
         content = self.fetch(robot_url)
-        lines = str(content).split('\n')
+        lines = content.split('\n')
         sitemaps=[]
         for line in lines:
             line = line.lower()
@@ -53,10 +49,21 @@ class Mole:
 
         return sitemaps
 
-    def get_sitemap_url(self,maps):
-        for url in maps:
+    def read_sitemap_file(self,mapfile):
+        content = self.fetch(mapfile)
 
+        if content is None:
+            return None
+
+        if mapfile.endswith('.gz'):
+            d = zlib.decompressobj(16+zlib.MAX_WBITS)
+            content = d.decompress(content)
+
+        print content
 
 if __name__ == "__main__":
     crawler = Mole()
     sitemaps=crawler.get_sitexml_robots('http://www.nytimes.com')
+
+    for sitemap in sitemaps:
+        crawler.read_sitemap_file(sitemap)
